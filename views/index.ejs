@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product Upload System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .preview-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .preview-image {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-card {
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .no-products {
+            text-align: center;
+            padding: 50px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed #dee2e6;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #ffe6e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4">Product Upload</h1>
+            <p class="lead">Upload and manage your product images</p>
+        </div>
+        <div class="card mb-5">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Upload New Product</h2>
+                <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" name="productName" class="form-control" required placeholder="Enter product name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product ID</label>
+                        <input type="text" name="productId" class="form-control" required placeholder="Enter unique product ID">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product Images</label>
+                        <input type="file" name="images" multiple accept="image/*" class="form-control" id="imageInput" required>
+                        <div class="message" id="fileError"></div>
+                    </div>
+                    <div class="preview-images" id="imagePreview"></div>
+                    <button type="submit" class="btn btn-primary w-100">Upload Product</button>
+                </form>
+            </div>
+        </div>
+        <h2 class="mb-4">Products Gallery</h2>
+        <div class="row" id="productsContainer">
+            <% if (products && products.length > 0) { %>
+                <% products.forEach(function(product) { %>
+                    <div class="col-md-4 mb-4">
+                        <div class="card product-card" onclick="location.href='/product/<%= product.productId %>'">
+                            <img src="<%= product.images[0] %>" class="card-img-top product-image" alt="<%= product.productName %>">
+                            <div class="card-body">
+                                <h5 class="card-title"><%= product.productName %></h5>
+                                <p class="card-text text-muted">ID: <%= product.productId %></p>
+                                <small class="text-muted"><%= product.images.length %> image(s)</small>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="col-12">
+                    <div class="no-products">
+                        <h3>No Products Available</h3>
+                        <p>Start by uploading your first product above!</p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function (e) {
+    const preview = document.getElementById('imagePreview');
+    const errorDiv = document.getElementById('fileError');
+    preview.innerHTML = ''; // Clear previous previews
+    errorDiv.style.display = 'none';
+
+    console.log('Files selected:', this.files); // Debugging log
+
+    // Validate number of files
+    if (this.files.length > 10) {
+        errorDiv.textContent = 'You can only upload up to 10 images at once.';
+        errorDiv.style.display = 'block';
+        this.value = ''; // Clear the input
+        return;
+    }
+
+    // Validate each file
+    for (const file of this.files) {
+        console.log('Processing file:', file.name); // Debugging log
+
+        // Check file size (5MB limit)
+        // if (file.size > 5 * 1024 * 1024) {
+        //     errorDiv.textContent = 'Each image must be less than 5MB.';
+        //     errorDiv.style.display = 'block';
+        //     this.value = ''; // Clear the input
+        //     preview.innerHTML = ''; // Clear previews
+        //     return;
+        // }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            errorDiv.textContent = 'Please upload only image files.';
+            errorDiv.style.display = 'block';
+            this.value = ''; // Clear the input
+            preview.innerHTML = ''; // Clear previews
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'preview-image';
+            img.onerror = function () {
+                this.src = 'https://via.placeholder.com/150x150?text=Error+Loading+Image';
+            };
+
+            console.log('Image loaded:', e.target.result); // Debugging log
+
+            preview.appendChild(img);
+        };
+
+        reader.onerror = function () {
+            errorDiv.textContent = 'Error reading file.';
+            errorDiv.style.display = 'block';
+        };
+
+        reader.readAsDataURL(file);
+    }
+});
+
+    </script>
+</body>
+</html>
